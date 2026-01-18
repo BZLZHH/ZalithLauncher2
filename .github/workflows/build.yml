@@ -1,20 +1,10 @@
 name: Build APK
 
 on:
-  workflow_call:
-    inputs:
-      variant:
-        required: true
-        type: string
-    secrets:
-      KEY_PASSWORD:
-        required: false
-      STORE_PASSWORD:
-        required: false
-      OAUTH_CLIENT_ID:
-        required: false
-      CURSEFORGE_API_KEY:
-        required: false
+  push:
+    branches:
+      - build_test
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,14 +14,8 @@ jobs:
         arch: ["all", "arm", "arm64", "x86", "x86_64"]
       fail-fast: false
 
-    env:
-      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-      OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
-      CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -47,21 +31,12 @@ jobs:
         with:
           add-job-summary: "on-failure"
 
-      - name: Build APK for ${{ matrix.arch }}
+      - name: Build Debug APK for ${{ matrix.arch }}
         run: |
           chmod +x gradlew
-          ./gradlew ZalithLauncher:assemble${{ inputs.variant }} -Darch=${{ matrix.arch }}
-
-      - name: Upload Release APK for ${{ matrix.arch }}
-        if: inputs.variant == 'Release'
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: release apk (${{ matrix.arch }})
-          path: ZalithLauncher/build/outputs/apk/release/*.apk
+          ./gradlew ZalithLauncher:assembleDebug -Darch=${{ matrix.arch }}
 
       - name: Upload Debug APK for ${{ matrix.arch }}
-        if: inputs.variant == 'Debug'
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
